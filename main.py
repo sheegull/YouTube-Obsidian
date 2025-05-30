@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
 YouTube RSS → Gemini 2.0 Flash → Markdown
-毎日 0:00 JST に実行し、直近 24 時間以内に公開された動画だけ処理する版
+毎日 0:00 JST に実行し、直近 24 時間以内に公開された動画だけ処理
 """
 
-import os, re, json, base64, time, pathlib, subprocess, tempfile, datetime
+import os, re, json, base64, time, pathlib, subprocess, tempfile, datetime, random
 import feedparser, requests, yaml
 from dotenv import load_dotenv
 
@@ -20,6 +20,7 @@ GEN_URL = (
     "https://generativelanguage.googleapis.com/v1beta/"
     "models/gemini-2.0-flash:generateContent"
 )
+UPLOAD_URL = "https://generativelanguage.googleapis.com/upload/v1beta/files"
 WINDOW_HOURS = 24  # 直近何時間を見るか（デフォルト 24h）
 
 # ---------- 通知 ----------
@@ -46,40 +47,67 @@ def notify(msg, title="YouTube Bot"):
 # ---------- Gemini プロンプト ----------
 PROMPT = (
     "1. 日本語で約1000字の要約 (#要約) を作成してください。ebookを翻訳するようにですます調にしてください\n"
-    "### 要約\n"
-    "(ここに1000字要約)\n"
+    "要約(タグにしないでください)\n"
+    "(ここに1000字要約)\n\n"
     "2. 続けて全文を冗長な部分を省きつつ日本語で完全翻訳 (#全文翻訳) してください。\n"
-    "### 全文翻訳\n"
+    "全文翻訳（タグにしないでください）\n"
     "(ここに全文翻訳)\n"
 )
 
 
 def gemini_audio(mp3_bytes: bytes) -> str:
-    payload = {
-        "contents": [
+    """20 MB 以下なら inline_data、超えたら Files API 経由で呼び出す"""
+
+    # ------------------ ① 20 MB 判定 ------------------
+    if len(mp3_bytes) > 20 * 1024 * 1024:  # 20 MB 超ならアップロード
+        # -- files:upload --
+        up = requests.post(
+            UPLOAD_URL,
+            params={
+                "key": API_KEY,
+                "uploadType": "media"
+            },
+            headers={"Content-Type": "audio/mp3"},
+            data=mp3_bytes,
+            timeout=300,
+        )
+        up.raise_for_status()
+
+        j = up.json()
+        file_uri = j.get("file", {}).get("uri") or j.get("file", {}).get("name")
+        if not file_uri:
+            raise RuntimeError(f"upload JSON に name が無い: {up.text}")
+
+        # payload は file_data 参照に変更
+        parts = [{"file_data": {"file_uri": file_uri}}, {"text": PROMPT}]
+    else:
+        # inline_data
+        parts = [
             {
-                "role": "user",
-                "parts": [
-                    {
-                        "inline_data": {
-                            "mime_type": "audio/mp3",
-                            "data": base64.b64encode(mp3_bytes).decode(),
-                        }
-                    },
-                    {"text": PROMPT},
-                ],
-            }
+                "inline_data": {
+                    "mime_type": "audio/mp3",
+                    "data": base64.b64encode(mp3_bytes).decode(),
+                }
+            },
+            {"text": PROMPT},
         ]
-    }
-    for _ in range(5):
-        r = requests.post(GEN_URL, params={"key": API_KEY}, json=payload, timeout=300)
-        if r.status_code == 429:
-            notify("⚠️ Gemini 429 - 60 秒待機")
-            time.sleep(60)
+
+    payload = {"contents": [{"role": "user", "parts": parts}]}
+
+    # ------------------ ② generateContent ------------------
+    for retry in range(5):  # 503/429 用指数バックオフ
+        res = requests.post(GEN_URL, params={"key": API_KEY}, json=payload, timeout=300)
+        if res.status_code in (429, 503):
+            wait = (2**retry) + random.uniform(0, 3)
+            notify(f"Gemini {res.status_code} → {wait:.1f}s wait")
+            time.sleep(wait)
             continue
-        r.raise_for_status()
-        return r.json()["candidates"][0]["content"]["parts"][0]["text"]
-    raise RuntimeError("Gemini 429 を 5回リトライしました")
+        res.raise_for_status()
+        # 任意のクールダウン（連続呼び出し抑制）
+        time.sleep(random.uniform(2, 5))
+        return res.json()["candidates"][0]["content"]["parts"][0]["text"]
+
+    raise RuntimeError("Gemini 503/429 を 5回 リトライしても失敗しました")
 
 
 # ---------- Shorts 判定 ----------
@@ -167,6 +195,7 @@ def crawl():
             if pub_ts < since_ts:  # 24h より古い → スキップ
                 continue
             handle_entry(e)
+            time.sleep(3)
 
 
 if __name__ == "__main__":
