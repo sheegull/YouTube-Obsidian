@@ -45,12 +45,11 @@ def notify(msg, title="YouTube Bot"):
 
 # ---------- Gemini プロンプト ----------
 PROMPT = (
-    "## 指示\n"
-    "1. 日本語で **約1000字** の要約 (#要約) を作成しなさい。\n"
-    "# 要約\n"
+    "1. 日本語で約1000字の要約 (#要約) を作成してください。ebookを翻訳するようにですます調にしてください\n"
+    "### 要約\n"
     "(ここに1000字要約)\n"
-    "2. 続けて全文を冗長な部分を省きつつ **日本語で完全翻訳** (#全文翻訳) しなさい。\n"
-    "# 全文翻訳\n"
+    "2. 続けて全文を冗長な部分を省きつつ日本語で完全翻訳 (#全文翻訳) してください。\n"
+    "### 全文翻訳\n"
     "(ここに全文翻訳)\n"
 )
 
@@ -96,16 +95,44 @@ def is_shorts(url: str) -> bool:
     return dur <= 60 or (h and w and h > w)
 
 
+# ---------- 判定関数 ----------
+def is_stream(meta: dict) -> bool:
+    return (
+        meta.get("is_live")
+        or meta.get("was_live")
+        or meta.get("live_status") in {"is_live", "was_live", "is_upcoming"}
+    )
+
+
+def classify_video(url: str) -> str:
+    meta_json = subprocess.run(
+        ["yt-dlp", "-j", "--skip-download", url],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    data = json.loads(meta_json)
+
+    dur, w, h = data.get("duration", 0), data.get("width", 0), data.get("height", 0)
+    if dur <= 60 or (h and w and h > w):
+        return "shorts"
+    if is_stream(data):
+        return "stream"
+    return "video"
+
+
 # ---------- 動画処理 ----------
 def handle_entry(entry):
     vid = getattr(entry, "yt_videoid", None)
     if not vid:
         return
     url = f"https://youtu.be/{vid}"
-    if is_shorts(url):
-        print(f"   - SKIP shorts {vid}")
+    kind = classify_video(url)
+    if kind != "video":
+        print(f"   - SKIP {kind} {vid}")
         return
 
+    # ↓ ここから先は従来どおりダウンロード→Gemini へ
     with tempfile.TemporaryDirectory() as tmp:
         mp3 = pathlib.Path(tmp) / f"{vid}.mp3"
         subprocess.run(
@@ -115,8 +142,9 @@ def handle_entry(entry):
 
     title_safe = re.sub(r'[\\/*?:"<>|]', "", entry.title)[:80]
     channel_safe = re.sub(r'[\\/*?:"<>|]', "", getattr(entry, "author", "unknown"))[:40]
-    fname = f"{entry.published[:10]}_{title_safe}_{channel_safe}.md"
-    (OUT / fname).write_text(md, encoding="utf-8")
+    (OUT / f"{entry.published[:10]}_{title_safe}_{channel_safe}.md").write_text(
+        md, encoding="utf-8"
+    )
     print(f"   ✔ {title_safe}")
     notify(f"{title_safe} を保存")
 
