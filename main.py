@@ -24,7 +24,7 @@ GEN_URL = (
     "models/gemini-2.0-flash:generateContent"
 )
 UPLOAD_URL = "https://generativelanguage.googleapis.com/upload/v1beta/files"
-WINDOW_HOURS = 48  # 直近何時間を見るか
+WINDOW_HOURS = 24  # 直近何時間を見るか
 
 # ---------- 通知 ----------
 try:
@@ -241,7 +241,7 @@ def process_podcast(entry):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         mp3_path = pathlib.Path(tmpdir) / "podcast.mp3"
-        fetch_enclosure(entry, mp3_path)             # ← ここで進捗バーを表示
+        fetch_enclosure(entry, mp3_path)  # ← ここで進捗バーを表示
         md = gemini_audio(mp3_path.read_bytes(), prompt)
 
     author = sanitize_filename(
@@ -250,7 +250,7 @@ def process_podcast(entry):
     fname = f"{entry.pub_dash}_{sanitize_filename(entry.title)}_{author}.md"
     (OUT_POD / fname).write_text(md, encoding="utf-8")
 
-    print(f" ✔ Pod  {entry.title}")                  # YouTube と同じ形式
+    print(f" ✔ Pod  {entry.title}")  # YouTube と同じ形式
     notify(f"Podcast: {entry.title}")
 
 
@@ -265,12 +265,14 @@ def crawl():
         print(f"● {feed_url}")
         parsed = feedparser.parse(feed_url.strip())
         for e in parsed.entries:
-            ts_tuple = getattr(e, "published_parsed", None) or getattr(e, "updated_parsed", None)
+            ts_tuple = getattr(e, "published_parsed", None) or getattr(
+                e, "updated_parsed", None
+            )
             if not ts_tuple or calendar.timegm(ts_tuple) < since_ts:
                 continue
 
             pub_dt = datetime.fromtimestamp(calendar.timegm(ts_tuple), UTC)
-            e.pub_dash  = pub_dt.strftime("%Y-%m-%d")  # 例 2025-05-31 （ファイル名用）
+            e.pub_dash = pub_dt.strftime("%Y-%m-%d")  # 例 2025-05-31 （ファイル名用）
             e.pub_slash = pub_dt.strftime("%Y/%m/%d")  # 例 2025/05/31 （YAML 用）
 
             if hasattr(e, "yt_videoid"):
@@ -280,7 +282,7 @@ def crawl():
             else:
                 print(f"   - SKIP unknown type: {e.title}")
 
-            time.sleep(3)  # API・帯域への優しさ
+            time.sleep(3)  # API レート制限対策
 
 
 if __name__ == "__main__":

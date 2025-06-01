@@ -1,24 +1,90 @@
 # YouTube RSSフィード
-# - https://www.youtube.com/feeds/videos.xml?channel_id=UC-DRzaGnL_vtBUpCFH5M0tg # TBPN
-# - https://www.youtube.com/feeds/videos.xml?channel_id=UCESLZhusAkFfsNsApnjF_Cg # All-In Podcast
-# - https://www.youtube.com/feeds/videos.xml?channel_id=UC9AHywQeW9BOcOl7dg-YMqA # Stratechery
 - https://www.youtube.com/feeds/videos.xml?channel_id=UC9cn0TuPq4dnbTY-CBsm8XA # a16z
-# - https://www.youtube.com/feeds/videos.xml?channel_id=UCznv7Vf9nBdJYvBagFdAHWw # Tim Ferriss
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCyFqFYfTW2VoIQKylJ04Rtw # Acquired
+- https://www.youtube.com/feeds/videos.xml?channel_id=UC5qxlwEKM7-5YZudb24l0bg # AI at Meta
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCLKPca3kwwd-B59HNr-_lvA # AI Engineer
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCEqgmyWChwvt6MFGGlmUQCQ # Ai2
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCye1YedIypHffYb8k6Gp9wg # Alex Kantrowitz
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCipPA-ZHX6UYGH_Iyti1-Jw # Alibaba Cloud
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCESLZhusAkFfsNsApnjF_Cg # All-In Podcast
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCteBj6K-B3PSaOYsqLVs3XQ # Amazon Science
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCrDwWp7EBBv4NwvScIpBDOA # Anthropic
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCm08TSsp87RRfn9SB_khuUQ # Baidu
+- https://www.youtube.com/feeds/videos.xml?channel_id=UC-yRDvpR99LUc5l7i7jLzew # Bg2 Pod
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCnEiGCE13SUI7ZvojTAVBKw # Bill Gates
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCfnHKTFEryHWyqr4Xjsjb3w # Business Breakdowns
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCXOtILmQEo3pL_1bJfUOFWw # ChinaTalk
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCXl4i9dYBrFOabk0xGmbkRA # Dwarkesh Patel
+- https://www.youtube.com/feeds/videos.xml?channel_id=UClWTCPVi-AU9TeCN6FkGARg # EO
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCKD37zEyw8vvopuMzG53IjQ # Epoch AI
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCygH8N-CIpwKituGw24Tzyg # Azeem Azhar
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCggtRyBerMfmCy-COkmADDA # Founders Fund
+- https://www.youtube.com/feeds/videos.xml?channel_id=UC-rCCy3FQ-GItDimSR9lhzw # Future of Life Institute
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCP7jMXSY2xbc3KCAE0MHQ-A # DeepMind
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCT-VzthVAM_4ohDdKa-BbXA # Google Research
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCQacHf30FxY4fbzD7Ds98vQ # Guy Kawasaki
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCZcR2SVWaGWNlMqPxvQS3vw # Hard Fork
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCwx7Y3W30N8aS_tiCy2x-2g # IBM Research
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCMhPRKnK8S_ruoGSt3vm1sQ # Interconnects AI
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCpQBb0fToph3jrDulwz1iUQ # Invest Like The Best
+- https://www.youtube.com/feeds/videos.xml?channel_id=UC6t1O76G0jYXOAoYCm153dA # Lenny's Podcast
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCSHZKyawb77ixDdsGog4iWA # Lex Fridman
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCiemDAS1bXMBTx3jIIOukFg # Masters of Scale
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCCb9_Kn8F_Opb3UCGm-lILQ # Microsoft Research
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCZK_i8QwWQ7w6V0H12PFpWA # Mila
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCBpxspUNl1Th33XbugiHJzw # MIT CSAIL
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCh_dVD10YuSghle8g6yjePg # Naval
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCSI7h9hydQ40K5MJHnCrQvw # No Priors
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCBHcMCGaiJhv-ESTcWGJPcw # Nvidia Developer
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCVqsisK6Gtojcy26010m4_Q # Off Topic
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCXZCJLdBC09xxGZ6gcdrc6A # OpenAI
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCphwJynbSnC0XPY7Vh6qFbQ # Overpowered
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCZbyAKrrtV87PywXc9vydng # SaaS Club
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCWrF0oN6unbXrWsTN7RctTw # Seqouia Capital
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCMR-rPSUI34DRQXUkvFuIUQ # South Park Commons
+- https://www.youtube.com/feeds/videos.xml?channel_id=UChugFTK0KyrES9terTid8vA # Stanford HAI
+- https://www.youtube.com/feeds/videos.xml?channel_id=UC9AHywQeW9BOcOl7dg-YMqA # Stratechery
+- https://www.youtube.com/feeds/videos.xml?channel_id=UC-DRzaGnL_vtBUpCFH5M0tg # TBPN
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCcr5vuAH5TPlYox-QLj4ySw # The Alan Turing Institute
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCMifE9PU5FPV1M7wC61K5CQ # The Social Raders
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCznv7Vf9nBdJYvBagFdAHWw # Tim Ferriss
+- https://www.youtube.com/feeds/videos.xml?channel_id=UC6wghONDqjhSw5KsXrnSTuA # Uncapped
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCsQoiOrh7jzKmE8NBofhTnQ # Varun Mayya
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCftwRNsjfRo08xYE31tkiyw # WIRED
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCcefcZRL2oaA_uBNeo5UOWg # Y Combinator
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCf0PBRjhf0rF8fWBIxTuoWA # 20VC
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCafjal1QYJ3rb0Y9xZk1Ezg # 80,000 hours
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCr5zQB5J5DJqZfar_WyWFAw # コテンラジオ
+- https://www.youtube.com/feeds/videos.xml?channel_id=UC3GpbpDEr8mp3ZZ8DDO65fg # 佐藤航陽の宇宙会議
+- https://www.youtube.com/feeds/videos.xml?channel_id=UCvWtG7MiIPzbCINPpdAYX4g # ハイパー起業ラジオ
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
+-
 -
 -
 -
 -
 # Podcast RSSフィード
+- https://feeds.transistor.fm/acq2 # ACQ2
+- http://feeds.harvardbusiness.org/harvardbusiness/ideacast # HBR IdeaCast
+- https://rss.art19.com/how-i-built-this # How I Built this
 - https://rss.art19.com/masters-of-scale # Masters of Scale
+- https://feeds.simplecast.com/MZz6Vcos # Pattern Breakers
+- https://feeds.megaphone.fm/AHARO1075645324 # The SaaS Podcast
 - https://anchor.fm/s/c0eda60/podcast/rss # WIRED 日本版
--
--
--
--
--
--
--
--
+- https://feeds.megaphone.fm/50x # 50X
+- https://feeds.megaphone.fm/guildtalk # 深津貴之のGUILD Talk
+- https://anchor.fm/s/29b92318/podcast/rss # シリコンバレーよろしく リターンズ
 -
 -
 -
