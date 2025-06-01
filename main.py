@@ -24,7 +24,7 @@ GEN_URL = (
     "models/gemini-2.0-flash:generateContent"
 )
 UPLOAD_URL = "https://generativelanguage.googleapis.com/upload/v1beta/files"
-WINDOW_HOURS = 24  # 直近何時間を見るか
+WINDOW_HOURS = 72  # 直近何時間を見るか
 
 # ---------- 通知 ----------
 try:
@@ -75,6 +75,7 @@ PROMPT_TMPL = (
     含めるキー:
     - title: {title_ja}
     - original_title: {original_title}
+    - channel: {channel}
     - url: {url}
     - published: {published}
     ---
@@ -113,16 +114,26 @@ PROMPT_TMPL = (
 ).lstrip()
 
 
-def build_prompt(entry) -> str:
+def build_prompt(entry, *, channel: str = "") -> str:
     url = (
         getattr(entry, "link", None)
         or getattr(entry, "id", "")
         or (entry.enclosures[0].href if getattr(entry, "enclosures", []) else "")
     )
 
+    if not channel:
+        channel = (
+            getattr(
+                entry, "author", ""
+            )  # YouTube RSS はここにチャンネル名が入ることが多い
+            or getattr(entry, "itunes_author", "")  # Podcast RSS
+            or "unknown"
+        )
+
     meta = {
         "title_ja": "",  # 日本語タイトルは Gemini に生成させる
         "original_title": entry.title,
+        "channel": channel,
         "url": url,
         "published": entry.pub_slash,
     }
@@ -213,11 +224,14 @@ def fetch_enclosure(entry, dest: pathlib.Path):
 def process_youtube(entry):
     vid = entry.yt_videoid
     url = f"https://youtu.be/{vid}"
-    if not yt_is_video(yt_meta(url)):
+    ymeta = yt_meta(url)
+    if not yt_is_video(ymeta):
         print(f"   - SKIP non-video {vid}")
         return
 
-    prompt = build_prompt(entry)
+    channel_name = ymeta.get("uploader") or "unknown"
+
+    prompt = build_prompt(entry, channel=channel_name)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         mp3_path = pathlib.Path(tmpdir) / f"{vid}.mp3"
@@ -235,7 +249,11 @@ def process_youtube(entry):
 
 
 def process_podcast(entry):
-    prompt = build_prompt(entry)
+    channel_name = (
+        getattr(entry, "author", "") or getattr(entry, "itunes_author", "") or "unknown"
+    )
+
+    prompt = build_prompt(entry, channel=channel_name)
 
     print(f"[download] {entry.title}")
 
