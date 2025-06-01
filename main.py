@@ -22,7 +22,7 @@ GEN_URL = (
     "models/gemini-2.0-flash:generateContent"
 )
 UPLOAD_URL = "https://generativelanguage.googleapis.com/upload/v1beta/files"
-WINDOW_HOURS = 24  # 直近何時間を見るか（デフォルト 24h）
+WINDOW_HOURS = 20  # 直近何時間を見るか（デフォルト 24h）
 
 # ---------- 通知 ----------
 try:
