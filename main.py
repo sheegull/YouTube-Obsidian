@@ -4,7 +4,7 @@ YouTube RSS → Gemini 2.0 Flash → Markdown
 毎日 0:00 JST に実行し、直近 24 時間以内に公開された動画だけ処理
 """
 
-import os, re, json, base64, time, pathlib, subprocess, tempfile, datetime, random
+import os, re, json, base64, time, pathlib, subprocess, tempfile, datetime, random, calendar
 import feedparser, requests, yaml
 from dotenv import load_dotenv
 
@@ -21,7 +21,7 @@ GEN_URL = (
     "models/gemini-2.0-flash:generateContent"
 )
 UPLOAD_URL = "https://generativelanguage.googleapis.com/upload/v1beta/files"
-WINDOW_HOURS = 24  # 直近何時間を見るか（デフォルト 24h）
+WINDOW_HOURS = 24 # 直近何時間を見るか（デフォルト 24h）
 
 # ---------- 通知 ----------
 try:
@@ -45,16 +45,62 @@ def notify(msg, title="YouTube Bot"):
 
 
 # ---------- Gemini プロンプト ----------
+
 PROMPT = (
-    "1. わかりやすいタイトルの日本語訳を作成してください。"
-    "(ここにタイトルの日本語訳)\n"
-    "2. 日本語で約1000字の要約 (#要約) を作成してください。ebookを翻訳するようにですます調にしてください"
-    "要約(タグにしないでください)\n"
-    "(ここに1000字要約)\n\n"
-    "3. 続けて全文を冗長な部分を省きつつ日本語で完全翻訳 (#全文翻訳) してください。"
-    "全文翻訳（タグにしないでください）\n"
-    "(ここに全文翻訳)\n"
-)
+    """
+    あなたは優秀な日英バイリンガル編集者です。以下の指示に従い、YouTube動画の文字起こし全文を処理してください。
+    **出力は日本語・Markdown形式、総文字数は必ず3000字以内**に収めてください。絶対に**```を含む行**を出力しないでください。
+
+    =====================
+    ### データ
+
+    ---
+    必ず最初に動画の詳細データを挿入してください（開始行と終了行を `---` で囲む）。
+    実際に取り込んだ動画のデータを以下の形式で記載してください。
+    含めるキー:
+    - title: 内容の正確でわかりやすい日本語タイトル (40字以内)
+    - original_title: オリジナル英語タイトル
+    - url: コンテンツURL
+    - published: 動画の公開日 (YYYY-MM-DD)
+    - duration: 再生時間 (mm:ss)
+    ---
+
+
+    ### 1. 要約 (1000字以内, だ/である調)
+    - まず **動画全体を俯瞰した3文のリード文**
+    - 次に **キーテーマ** を箇条書き (最大6項目)
+    - それぞれのテーマに対応する **主要ポイント** を番号付きリストで記載 (1行70文字以内)
+    - 具体的数字・固有名詞を残し、冗長・重複表現は削除
+    - 句読点と接続詞を適切に挿入して読みやすく
+
+    ---
+    ### 2. 本文簡潔翻訳 (2000字以内, だ/である調)
+    - 文字起こし全文を、**冗長な相づち・脱線・繰り返し** を省きながら時系列で翻訳
+    - 重要な見出しごとに `####` の小見出しを付け、続けて本文
+    - 見出しは`見出し：`の形式で必ず記載、改行後に必ず本文（見出しと本文に空行を空けないこと）
+    - 質問と回答など会話形式は「**Q:**」「**A:**」を用い、読み手が流れを追いやすいように整理
+    - 引用・例示・数字・固有名詞は正確に保持
+
+    ---
+    ### 3. 次の提案 (任意, 見つかった場合のみ)
+    - 動画が提案する **引用記事や文献、論文** や **ツール** があれば箇条書きで列挙
+    - 1行150字以内
+    - 必ず提案先の論文や記事などのURLを含めること
+
+    =====================
+    ### 出力ルールまとめ
+    - 全体で**最大3000字**
+    - 見出しには `#` をタグとして使わず、必ず `###` から始める
+    - 「だ/である」調を徹底
+    - 余計な挿入語・口癖・同義反復は削除
+    - 指示やコメントは出力しない
+    - 指定以外のセクションを追加しない
+    """
+    )
+
+
+
+
 
 
 def gemini_audio(mp3_bytes: bytes) -> str:
@@ -193,7 +239,7 @@ def crawl():
         for e in d.entries:
             if not hasattr(e, "published_parsed"):
                 continue
-            pub_ts = time.mktime(e.published_parsed)
+            pub_ts = calendar.timegm(e.published_parsed)
             if pub_ts < since_ts:  # 24h より古い → スキップ
                 continue
             handle_entry(e)
