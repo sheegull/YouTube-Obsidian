@@ -6,7 +6,7 @@ Asia/Tokyoで毎日 0:00 に実行し、WINDOW_HOURS 内の新着のみ処理
 
 import os, re, json, base64, time, pathlib, subprocess, tempfile, random, calendar
 import feedparser, requests, yaml
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from dotenv import load_dotenv
 
 # ---------- 設定 ----------
@@ -69,7 +69,8 @@ PROMPT_TMPL = (
     ### メタデータ
 
     ---
-    必ず最初に動画の詳細データを挿入してください（開始行と終了行を `---` で囲む）。
+    ### YAMLメタデータ
+    必ず最初に YAML フロントマターを挿入してください（開始行と終了行を --- で囲む）。
     実際に取り込んだ動画/音声のデータを以下の形式で記載してください。
     含めるキー:
     - title: {title_ja}
@@ -113,11 +114,17 @@ PROMPT_TMPL = (
 
 
 def build_prompt(entry) -> str:
+    url = (
+        getattr(entry, "link", None)
+        or getattr(entry, "id", "")
+        or (entry.enclosures[0].href if getattr(entry, "enclosures", []) else "")
+    )
+
     meta = {
         "title_ja": "",  # 日本語タイトルは Gemini に生成させる
         "original_title": entry.title,
-        "url": entry.link,
-        "published": entry.published[:10] if hasattr(entry, "published") else "",
+        "url": url,
+        "published": entry.pub_slash,
     }
     return PROMPT_TMPL.format(**meta)
 
@@ -221,26 +228,29 @@ def process_youtube(entry):
         md = gemini_audio(mp3_path.read_bytes(), prompt)
 
     author = sanitize_filename(getattr(entry, "author", "unknown"), 40)
-    fname = f"{entry.published[:10]}_{sanitize_filename(entry.title)}_{author}.md"
+    fname = f"{entry.pub_dash}_{sanitize_filename(entry.title)}_{author}.md"
     (OUT_YT / fname).write_text(md, encoding="utf-8")
-    print(f"   ✔ YT  {entry.title}")
+    print(f" ✔ YT  {entry.title}")
     notify(f"YouTube: {entry.title}")
 
 
 def process_podcast(entry):
     prompt = build_prompt(entry)
 
+    print(f"[download] {entry.title}")
+
     with tempfile.TemporaryDirectory() as tmpdir:
         mp3_path = pathlib.Path(tmpdir) / "podcast.mp3"
-        fetch_enclosure(entry, mp3_path)
+        fetch_enclosure(entry, mp3_path)             # ← ここで進捗バーを表示
         md = gemini_audio(mp3_path.read_bytes(), prompt)
 
     author = sanitize_filename(
         getattr(entry, "author", getattr(entry, "itunes_author", "unknown")), 40
     )
-    fname = f"{entry.published[:10]}_{sanitize_filename(entry.title)}_{author}.md"
+    fname = f"{entry.pub_dash}_{sanitize_filename(entry.title)}_{author}.md"
     (OUT_POD / fname).write_text(md, encoding="utf-8")
-    print(f"   ✔ POD {entry.title}")
+
+    print(f" ✔ Pod  {entry.title}")                  # YouTube と同じ形式
     notify(f"Podcast: {entry.title}")
 
 
@@ -255,13 +265,13 @@ def crawl():
         print(f"● {feed_url}")
         parsed = feedparser.parse(feed_url.strip())
         for e in parsed.entries:
-            ts_tuple = getattr(e, "published_parsed", None) or getattr(
-                e, "updated_parsed", None
-            )
-            if not ts_tuple:
+            ts_tuple = getattr(e, "published_parsed", None) or getattr(e, "updated_parsed", None)
+            if not ts_tuple or calendar.timegm(ts_tuple) < since_ts:
                 continue
-            if calendar.timegm(ts_tuple) < since_ts:
-                continue
+
+            pub_dt = datetime.fromtimestamp(calendar.timegm(ts_tuple), UTC)
+            e.pub_dash  = pub_dt.strftime("%Y-%m-%d")  # 例 2025-05-31 （ファイル名用）
+            e.pub_slash = pub_dt.strftime("%Y/%m/%d")  # 例 2025/05/31 （YAML 用）
 
             if hasattr(e, "yt_videoid"):
                 process_youtube(e)
