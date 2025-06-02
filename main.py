@@ -63,7 +63,7 @@ def sanitize_filename(text: str, max_len: int = 80) -> str:
 PROMPT_TMPL = (
     """
     あなたは優秀な日英バイリンガル編集者です。以下の指示に従い、コンテンツの文字起こし全文を処理してください。
-    **出力は日本語・Markdown形式、総文字数は必ず3000字以内**に収めてください。コードブロックは禁止です。
+    **出力は日本語・Markdown形式、総文字数は必ず4000字以内**に収めてください。コードブロックは禁止です。
 
     =====================
     ### メタデータ
@@ -89,7 +89,7 @@ PROMPT_TMPL = (
     - 句読点と接続詞を適切に挿入して読みやすく
 
     ---
-    ### 2. ポイント (2000字以内, です/ます調)
+    ### 2. ポイント (3000字以内, です/ます調)
     - 文字起こし全文を、**冗長な相づち・脱線・繰り返し** を省きながら時系列で翻訳
     - 重要な見出しごとに `####` の小見出しを付け、続けて本文
     - 見出しは`見出し：/n本文`の形式で必ず記載
@@ -104,7 +104,7 @@ PROMPT_TMPL = (
 
     =====================
     ### 出力ルールまとめ
-    - 全体で**最大3000字**
+    - 全体で**最大4000字**
     - 見出しには `#` をタグとして使わず、必ず `###` から始める
     - 「です/ます」調を徹底
     - 余計な挿入語・口癖・同義反復は削除
@@ -181,19 +181,29 @@ def gemini_audio(mp3_bytes: bytes, prompt: str) -> str:
 
 
 # ========== YouTube 用 ==========
-def yt_meta(url: str) -> dict:
-    """yt-dlp -j --skip-download でメタデータ取得"""
-    meta_json = subprocess.run(
+def yt_meta(url: str) -> dict | None:
+    """yt-dlp -j --skip-download でメタデータ取得。失敗時はNone"""
+    res = subprocess.run(
         ["yt-dlp", "-j", "--skip-download", url],
         capture_output=True,
         text=True,
-        check=True,
-    ).stdout
-    return json.loads(meta_json)
+        check=False,
+    )
+
+    if res.returncode != 0:
+        msg = res.stderr.strip().splitlines()[-1] if res.stderr else "Unknown error"
+        print(f"   - yt-dlp error ({res.returncode}) for {url}: {msg}")
+        return None
+
+    try:
+        return json.loads(res.stdout)
+    except json.JSONDecodeError:
+        print(f"   - yt-dlp produced invalid JSON for {url}")
+        return None
 
 
 def yt_is_video(meta: dict) -> bool:
-    """Shorts とライブ配信を除外"""
+    """Shorts、ライブ配信、プレミア公開前動画を除外"""
     dur, w, h = meta.get("duration", 0), meta.get("width", 0), meta.get("height", 0)
     shorts = dur <= 60 or (h and w and h > w)
     stream = (
@@ -201,7 +211,12 @@ def yt_is_video(meta: dict) -> bool:
         or meta.get("was_live")
         or meta.get("live_status") in {"is_live", "was_live", "is_upcoming"}
     )
-    return (not shorts) and (not stream)
+    scheduled = (
+        meta.get("availability") == "scheduled"
+        or meta.get("live_status") == "is_upcoming"
+    )
+
+    return (not shorts) and (not stream) and (not scheduled)
 
 
 # ========== Podcast 用 ==========
@@ -225,6 +240,8 @@ def process_youtube(entry):
     vid = entry.yt_videoid
     url = f"https://youtu.be/{vid}"
     ymeta = yt_meta(url)
+    if ymeta is None:
+        return
     if not yt_is_video(ymeta):
         print(f"   - SKIP non-video {vid}")
         return
@@ -277,6 +294,8 @@ def crawl():
     since_ts = time.time() - WINDOW_HOURS * 3600
     feeds_raw = yaml.safe_load(pathlib.Path("feeds.yaml").read_text()) or []
     feeds = [f.strip() for f in feeds_raw if isinstance(f, str) and f.strip()]
+    now_utc = datetime.now(UTC)
+
     for feed_url in feeds:
         if not feed_url.strip():
             continue
@@ -290,6 +309,13 @@ def crawl():
                 continue
 
             pub_dt = datetime.fromtimestamp(calendar.timegm(ts_tuple), UTC)
+            if pub_dt > now_utc:
+                print(f"   - SKIP scheduled premiere: {e.title}")
+                continue
+
+            if pub_dt.timestamp() < since_ts:
+                continue
+
             e.pub_dash = pub_dt.strftime("%Y-%m-%d")  # 例 2025-05-31 （ファイル名用）
             e.pub_slash = pub_dt.strftime("%Y/%m/%d")  # 例 2025/05/31 （YAML 用）
 
